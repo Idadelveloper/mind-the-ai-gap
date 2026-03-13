@@ -1,0 +1,128 @@
+.input-bar {
+  flex-shrink: 0;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  padding: 10px 12px;
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ─── Image preview ─── */
+.input-bar__preview {
+  position: relative;
+  width: fit-content;
+  margin-left: 44px;
+}
+
+.preview__thumb {
+  height: 64px;
+  width: 64px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+}
+
+.preview__remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-secondary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--color-bg);
+  transition: background 0.15s;
+}
+
+.preview__remove:hover {
+  background: #c73652;
+}
+
+/* ─── Input row ─── */
+.input-bar__row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.input-bar__icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.input-bar__icon-btn:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+/* ─── Textarea ─── */
+.input-bar__textarea {
+  flex: 1;
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-input);
+  padding: 9px 12px;
+  color: var(--color-text);
+  font-size: 14px;
+  line-height: 1.5;
+  outline: none;
+  max-height: 120px;
+  overflow-y: auto;
+  transition: border-color 0.15s;
+}
+
+.input-bar__textarea::placeholder {
+  color: var(--color-text-muted);
+}
+
+.input-bar__textarea:focus {
+  border-color: var(--color-primary);
+}
+
+.input-bar__textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ─── Send button ─── */
+.input-bar__send-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--color-border);
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s, transform 0.1s;
+}
+
+.input-bar__send-btn--active {
+  background: var(--color-primary);
+  color: white;
+}
+
+.input-bar__send-btn--active:hover {
+  background: #0026d4;
+  transform: scale(1.05);
+}
+
+.input-bar__send-btn--active:active {
+  transform: scale(0.97);
+}

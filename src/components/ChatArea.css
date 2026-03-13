@@ -1,0 +1,17 @@
+.chat-area {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  scroll-behavior: smooth;
+  padding-bottom: 8px;
+}
+
+.chat-area__spacer {
+  flex: 1;
+  min-height: 16px;
+}
+
+.chat-area__bottom {
+  height: 4px;
+}

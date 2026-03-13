@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Mind the AI Gap</title>
+    <!--
+      For PRODUCTION: Register for the Prompt API Chrome Origin Trial:
+      https://developer.chrome.com/origintrials/#/view_trial/2533837740349325313
+
+      Once you have a token, uncomment the line below and replace YOUR_TOKEN_HERE:
+    -->
+    <!-- <meta http-equiv="origin-trial" content="YOUR_TOKEN_HERE"> -->
+
+    <!--
+      For LOCAL DEVELOPMENT, enable these Chrome flags instead (see README.md):
+      chrome://flags/#optimization-guide-on-device-model → Enabled BypassPerfRequirement
+      chrome://flags/#prompt-api-for-gemini-nano-multimodal-input → Enabled
+    -->
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,19 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  width: 100%;
+  background: var(--color-bg);
+  overflow: hidden;
+  position: relative;
+}
+
+/* Subtle left/right border for wide screens */
+@media (min-width: 800px) {
+  .app {
+    border-left: 1px solid var(--color-border);
+    border-right: 1px solid var(--color-border);
+  }
+}

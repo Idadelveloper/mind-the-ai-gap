@@ -1,0 +1,172 @@
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px 16px;
+  gap: 16px;
+  text-align: center;
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* ─── Roundel ─── */
+.empty-state__roundel {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+}
+
+.roundel__ring {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--color-secondary);
+  position: relative;
+}
+
+.roundel__ring::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--color-bg);
+}
+
+.roundel__bar {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  transform: translateY(-50%);
+  height: 22px;
+  background: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.roundel__bar span {
+  color: white;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+/* ─── Text ─── */
+.empty-state__title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: -0.3px;
+}
+
+.empty-state__subtitle {
+  font-size: 14px;
+  color: var(--color-text-muted);
+  max-width: 320px;
+  line-height: 1.6;
+}
+
+/* ─── Fake status board ─── */
+.status-board {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  width: 100%;
+  max-width: 300px;
+  font-size: 12px;
+}
+
+.status-board__header {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--color-text-muted);
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.status-board__lines {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.status-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-line__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-line__name {
+  flex: 1;
+  color: var(--color-text);
+  font-weight: 500;
+  text-align: left;
+}
+
+.status-line__status {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.status-line__status.good {
+  color: var(--color-online);
+}
+
+.status-line__status.bad {
+  color: var(--color-offline);
+}
+
+/* ─── Suggestions ─── */
+.empty-state__hint {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-bottom: -4px;
+}
+
+.suggestion-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  max-width: 380px;
+}
+
+.suggestion-chip {
+  padding: 8px 14px;
+  border-radius: var(--radius-chip);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  cursor: pointer;
+}
+
+.suggestion-chip:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.suggestion-chip:active {
+  transform: translateY(0);
+}
