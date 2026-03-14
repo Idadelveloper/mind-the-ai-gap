@@ -30,12 +30,16 @@ export const app = initializeApp(firebaseConfig);
 //
 //   const ai = getAI(app, { backend: new GoogleAIBackend() });
 //
-//   // Text model: prefers on-device, falls back to cloud automatically
+//   // Text model: prefers on-device, falls back to cloud automatically.
+//   // We'll use startChat() on this model in useChat.ts (TODO 3) so the
+//   // SDK manages conversation history for us.
 //   _textModel = getGenerativeModel(ai, {
 //     mode: InferenceMode.PREFER_ON_DEVICE,
+//     inCloudParams: { model: "gemini-2.5-flash-lite" },
 //   });
 //
-//   // Image model: always uses cloud (on-device has limited multimodal support)
+//   // Image model: always uses cloud (on-device has limited multimodal support).
+//   // Used as a standalone generateContent() call — no chat session needed.
 //   _imageModel = getGenerativeModel(ai, {
 //     mode: InferenceMode.ONLY_IN_CLOUD,
 //     inCloudParams: { model: "gemini-2.5-flash" },

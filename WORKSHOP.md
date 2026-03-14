@@ -221,12 +221,16 @@ export function initModels(): void {
   // ✏️  Add this code:
   const ai = getAI(app, { backend: new GoogleAIBackend() });
 
-  // Text model: prefers on-device, falls back to cloud automatically
+  // Text model: prefers on-device, falls back to cloud automatically.
+  // We use startChat() on this model in useChat.ts so the SDK manages
+  // conversation history across messages in the same session.
   _textModel = getGenerativeModel(ai, {
     mode: InferenceMode.PREFER_ON_DEVICE,
+    inCloudParams: { model: "gemini-2.5-flash-lite" },
   });
 
-  // Image model: always uses cloud (better multimodal support)
+  // Image model: always uses cloud (on-device has limited multimodal support).
+  // Used as a one-shot generateContent() call in useChat.ts.
   _imageModel = getGenerativeModel(ai, {
     mode: InferenceMode.ONLY_IN_CLOUD,
     inCloudParams: { model: "gemini-2.5-flash" },
@@ -242,10 +246,11 @@ export function initModels(): void {
   instance connected to your Firebase project, using the Gemini Developer API backend
 
 - `getGenerativeModel(ai, { mode: InferenceMode.PREFER_ON_DEVICE })` — creates a
-  model instance that will use Chrome's built-in Gemini Nano when available
+  model instance that prefers Chrome's built-in Gemini Nano, with `gemini-2.5-flash-lite`
+  as the cloud fallback
 
-- `inCloudParams: { model: "gemini-2.5-flash" }` — when the image model hits the
-  cloud, it uses Gemini 2.5 Flash for fast, high-quality multimodal responses
+- `inCloudParams: { model: "gemini-2.5-flash" }` — the image model uses Gemini 2.5
+  Flash for fast, high-quality multimodal responses (full cloud inference)
 
 ### Try it!
 
@@ -255,11 +260,23 @@ yet. The `if (textModel)` block in `useChat.ts` is empty. Let's fix that in Step
 
 ---
 
-## Step 3: Wire Up Text Chat with Hybrid AI
+## Step 3: Wire Up Text Chat with the Firebase Chat API
 
-Now let's connect the text model to the chat. When a user sends a message,
-we'll call the model, get a response, and figure out whether it came from
-on-device or cloud inference.
+Now let's connect the text model to the chat. We'll use Firebase AI Logic's
+**chat API** — `startChat()` and `sendMessage()` — which automatically manages
+the conversation history for you, so you don't have to track it yourself.
+
+### The chat API vs. generateContent()
+
+| | `generateContent()` | `startChat()` + `sendMessage()` |
+|---|---|---|
+| Memory | None — each call is standalone | SDK tracks history automatically |
+| Best for | One-shot queries, on-device | Multi-turn conversation |
+| History | You manage it yourself | Built in |
+
+For our chat app, `startChat()` is the right tool. Each call to `sendMessage()`
+adds the message and response to the session's history, so the AI actually
+remembers what you said earlier in the conversation.
 
 ### Open `src/hooks/useChat.ts`
 
@@ -272,7 +289,7 @@ let source: InferenceSource = "mock";
 
 if (textModel) {
   // ============================================================
-  // TODO 3: Send the prompt to the model (WORKSHOP.md → Step 3)
+  // TODO 3: Send the message using the chat API (WORKSHOP.md → Step 3)
   // ============================================================
   //
   // ✏️  Your code goes inside this if-block ↓
@@ -280,11 +297,20 @@ if (textModel) {
 }
 ```
 
-Add these three lines inside the `if (textModel)` block:
+Add this code inside the `if (textModel)` block:
 
 ```ts
 if (textModel) {
-  const result = await textModel.generateContent(fullPrompt);
+  // Create a session on the first message; reuse it for follow-ups
+  if (!chatSessionRef.current) {
+    chatSessionRef.current = textModel.startChat({
+      systemInstruction: PERSONA_PROMPT,
+    });
+  }
+
+  // The SDK automatically appends this message + response to the history
+  const result = await chatSessionRef.current.sendMessage(userMessage);
+
   responseText = result.response.text();
   source = result.response.inferenceSource ?? "in_cloud";
 }
@@ -292,45 +318,48 @@ if (textModel) {
 
 **Save the file.**
 
-### What's happening here
+### What each part does
 
-- `textModel.generateContent(fullPrompt)` — sends the prompt to the model.
-  The prompt is already built for you: it includes the Tube Veteran persona
-  + the user's question.
+- `textModel.startChat({ systemInstruction: PERSONA_PROMPT })` — creates a
+  `ChatSession`. The system instruction gives the AI its persona once, upfront,
+  rather than repeating it in every message.
 
-- `result.response.text()` — extracts the text from the response.
+- `chatSessionRef.current` — a React ref that holds the session across renders
+  without causing re-renders itself. It persists for the full conversation.
 
-- `result.response.inferenceSource` — this is the key part! It tells you whether
-  inference happened `"on_device"` or `"in_cloud"`. The UI uses this to show the
-  ⚡ or ☁️ chip on each message.
+- `chatSessionRef.current.sendMessage(userMessage)` — sends your message.
+  The SDK automatically includes the full conversation history in the request,
+  so the Tube Veteran remembers what you said before.
 
-- `?? "in_cloud"` — fallback in case the field isn't present (can happen with
-  some older SDK versions).
+- `result.response.inferenceSource` — tells you whether inference happened
+  `"on_device"` (⚡) or `"in_cloud"` (☁️). The UI chip updates automatically.
 
-> **Note:** Each message is a standalone prompt. On-device Gemini Nano doesn't
-> support multi-turn conversations, so we include the full persona in every prompt.
-> The `fullPrompt` variable (defined just above the if-block) already handles this.
+> **Note on on-device + multi-turn:** When Gemini Nano handles the first
+> message, it works great. For follow-up messages with conversation history,
+> the SDK may route to the cloud — on-device models have limited multi-turn
+> support. This is `PREFER_ON_DEVICE` in action: use device when you can,
+> cloud when you can't.
 
 ### Try it!
 
-Send a message. You should get a real response from the Tube Veteran!
+Send a message. You should get a real response from the Tube Veteran! Now send
+a follow-up that references your first message — the AI should remember the
+context. That's the chat session working.
 
-Check the chip on the response:
-- **⚡ On-Device** — Gemini Nano ran on your machine. No network request was made!
-- **☁️ Cloud** — Firebase routed to Gemini in the cloud (on-device not available)
+Check the chip on each response:
+- **⚡ On-Device** — Gemini Nano ran on your machine, no network request!
+- **☁️ Cloud** — Firebase routed to Gemini in the cloud
 
 ### 🧪 Experiment: Test offline mode
 
 1. Open **DevTools** (F12) → **Network** tab
 2. Check the **"Offline"** checkbox to simulate no internet connection
-3. Send another message
+3. Send a message
 
-If Gemini Nano is available on your device, you should **still get a response** —
-even without internet! That's hybrid inference in action. The ⚡ chip confirms it.
-
-If you get an error, it means on-device isn't available yet (the model may still
-be downloading — check `chrome://on-device-internals`). In that case, un-check
-"Offline" and the cloud fallback will handle it.
+If Gemini Nano is available and this is your first message (no history),
+you should **still get a response** — even offline! That's hybrid inference.
+The ⚡ chip confirms it. Follow-up messages with history will show an error
+offline (cloud is needed for multi-turn), which re-enables when you go back online.
 
 ---
 
@@ -411,32 +440,40 @@ You've built a fully working hybrid AI app with:
 
 - ✅ **On-device AI** — text responses via Gemini Nano, private and offline-capable
 - ✅ **Automatic cloud fallback** — seamlessly switches when on-device isn't available
+- ✅ **Multi-turn conversation** — the Firebase chat API manages history for you
 - ✅ **Cloud AI for images** — Gemini 2.5 Flash handles multimodal analysis
 - ✅ **Zero backend** — Firebase AI Logic handles API key security and routing
-- ✅ **Real-time inference source indicator** — you can see exactly where each response came from
+- ✅ **Real-time inference source indicator** — see exactly where each response came from
 
 ### What's happening under the hood?
 
 ```
-User sends text message
+User sends a text message
         │
         ▼
   initModels() called
   (lazy — first interaction only)
         │
         ▼
-textModel.generateContent(prompt)
+  chatSession.sendMessage(userMessage)
+  [ChatSession tracks history automatically]
         │
         ├─── Chrome has Gemini Nano? ──► On-device inference ──► ⚡ On-Device chip
-        │                                (no network request!)
-        └─── Not available? ──────────► Firebase cloud proxy ──► ☁️ Cloud chip
-                                        (Gemini Developer API)
+        │    (single-turn or no history)   (no network request!)
+        └─── History / not available? ──► Firebase cloud proxy ──► ☁️ Cloud chip
+                                          (gemini-2.5-flash-lite)
 ```
 
-For images, it's simpler — always goes to the Firebase proxy → Gemini 2.5 Flash.
+For images, the path is always cloud:
+```
+imageModel.generateContent([prompt, imagePart])
+        │
+        └──────────────────────────────► Firebase cloud proxy ──► ☁️ Cloud chip
+                                         (gemini-2.5-flash)
+```
 
-The Firebase proxy (not your client code) handles your API key, rate limiting,
-and App Check verification. Your key is never exposed in the browser.
+The Firebase proxy handles your API key, rate limiting, and App Check verification.
+Your key is never exposed in the browser.
 
 ---
 
@@ -475,7 +512,7 @@ Got some time left? Try these:
 
 - [Firebase AI Logic — Hybrid Inference (Web)](https://firebase.google.com/docs/ai-logic/hybrid/web/get-started)
 - [Firebase AI Logic — Generate Text](https://firebase.google.com/docs/ai-logic/generate-text)
-- [Firebase AI Logic — Multimodal Prompts](https://firebase.google.com/docs/ai-logic/multimodal)
+- [Firebase AI Logic — Analyze Images](https://firebase.google.com/docs/ai-logic/analyze-images?_gl=1*1axilpk*_up*MQ..*_ga*MTg2MDU1NzI4Mi4xNzczNDQ3NTEx*_ga_CW55HF8NVT*czE3NzM0NDc1MTEkbzEkZzAkdDE3NzM0NDc1MTEkajYwJGwwJGgw&api=dev)
 - [Chrome Built-in AI — Getting Started](https://developer.chrome.com/docs/ai/get-started)
 - [Gemini API — Model Overview](https://ai.google.dev/gemini-api/docs/models)
 - [Firebase AI Logic SDK Reference](https://firebase.google.com/docs/reference/js/ai)

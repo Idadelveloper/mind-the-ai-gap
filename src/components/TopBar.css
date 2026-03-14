@@ -17,15 +17,11 @@
   min-width: 0;
 }
 
-.topbar__icon {
+.topbar__logo {
   width: 36px;
   height: 36px;
-  background: var(--color-secondary);
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
+  border-radius: 8px;
+  object-fit: contain;
   flex-shrink: 0;
 }
 
@@ -52,10 +48,36 @@
   text-overflow: ellipsis;
 }
 
-/* ─── Status badge ─── */
+/* ─── Right side ─── */
 .topbar__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   flex-shrink: 0;
 }
+
+.topbar__new-chat-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 20px;
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.topbar__new-chat-btn:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+  border-color: var(--color-text-muted);
+}
+
+/* ─── Status badge ─── */
 
 .status-badge {
   display: flex;

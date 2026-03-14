@@ -7,7 +7,7 @@ import InputBar from "./components/InputBar";
 import "./App.css";
 
 function App() {
-  const { messages, isLoading, sendMessage } = useChat();
+  const { messages, isLoading, sendMessage, clearMessages } = useChat();
   const isOnline = useOnlineStatus();
 
   const handleSuggestion = useCallback(
@@ -19,7 +19,11 @@ function App() {
 
   return (
     <div className="app">
-      <TopBar isOnline={isOnline} />
+      <TopBar
+        isOnline={isOnline}
+        hasMessages={messages.length > 0}
+        onNewChat={clearMessages}
+      />
       <ChatArea
         messages={messages}
         isLoading={isLoading}
