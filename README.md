@@ -44,10 +44,15 @@ The app uses Firebase AI Logic's **hybrid inference** and **chat API**:
 
 ## Chrome Setup for On-Device AI
 
+**Hardware requirements** (if not met, the app falls back to cloud automatically):
+- 22 GB free disk space
+- 4 GB+ VRAM *or* 16 GB RAM with 4+ CPU cores
+- Chrome Desktop (latest)
+
 For local development, enable these flags in Chrome:
 
 1. `chrome://flags/#optimization-guide-on-device-model` → **Enabled BypassPerfRequirement**
-2. `chrome://flags/#prompt-api-for-gemini-nano-multimodal-input` → **Enabled**
+2. `chrome://flags/#prompt-api-for-gemini-nano` → **Enabled**
 3. **Restart Chrome**
 4. Check `chrome://on-device-internals` → **Model Status** (download may take a few minutes)
 

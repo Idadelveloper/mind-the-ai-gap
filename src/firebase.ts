@@ -25,6 +25,7 @@ export const app = initializeApp(firebaseConfig);
 // FIRST — add these imports at the top of this file (replace the type import above):
 //
 //   import { getAI, getGenerativeModel, GoogleAIBackend, InferenceMode } from "firebase/ai";
+//   import { PERSONA_PROMPT } from "./constants";
 //
 // THEN — fill in the body of initModels() below:
 //
@@ -33,16 +34,24 @@ export const app = initializeApp(firebaseConfig);
 //   // Text model: prefers on-device, falls back to cloud automatically.
 //   // We'll use startChat() on this model in useChat.ts (TODO 3) so the
 //   // SDK manages conversation history for us.
+//   // systemInstruction must be set here (at model level) — the SDK normalises
+//   // it correctly here, but NOT when passed to startChat().
 //   _textModel = getGenerativeModel(ai, {
 //     mode: InferenceMode.PREFER_ON_DEVICE,
-//     inCloudParams: { model: "gemini-2.5-flash-lite" },
+//     inCloudParams: {
+//       model: "gemini-2.5-flash-lite",
+//       systemInstruction: PERSONA_PROMPT,
+//     },
 //   });
 //
 //   // Image model: always uses cloud (on-device has limited multimodal support).
 //   // Used as a standalone generateContent() call — no chat session needed.
 //   _imageModel = getGenerativeModel(ai, {
 //     mode: InferenceMode.ONLY_IN_CLOUD,
-//     inCloudParams: { model: "gemini-2.5-flash" },
+//     inCloudParams: {
+//       model: "gemini-2.5-flash",
+//       systemInstruction: PERSONA_PROMPT,
+//     },
 //   });
 //
 // ⚠️  IMPORTANT: getGenerativeModel() must be called AFTER a user interaction.

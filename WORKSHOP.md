@@ -53,12 +53,21 @@ complete the workshop steps. That's the mock response system working as intended
 
 **4. Set up Chrome for on-device AI** (do this now so the model downloads in the background):
 
-Open these URLs in Chrome and set each flag to **Enabled**:
-- `chrome://flags/#optimization-guide-on-device-model` → **Enabled BypassPerfRequirement**
-- `chrome://flags/#prompt-api-for-gemini-nano-multimodal-input` → **Enabled**
+> **Hardware requirements for Gemini Nano:**
+> - **22 GB** free disk space (the model is large)
+> - **4 GB+ VRAM** *or* **16 GB RAM** (with 4+ CPU cores)
+> - Chrome Desktop (latest) — on-device AI is desktop-only
+>
+> If your machine doesn't meet these requirements, the app will automatically
+> fall back to cloud inference — you'll see ☁️ instead of ⚡, and everything
+> still works!
 
-Restart Chrome, then check `chrome://on-device-internals` — you should see the
-model status. It may take a few minutes to download.
+Open these URLs in Chrome and change the flag value as shown:
+- `chrome://flags/#optimization-guide-on-device-model` → **Enabled BypassPerfRequirement**
+- `chrome://flags/#prompt-api-for-gemini-nano` → **Enabled**
+
+Restart Chrome, then visit `chrome://on-device-internals` and check **Model Status**.
+Gemini Nano may take a few minutes to download in the background.
 
 ---
 
@@ -210,6 +219,7 @@ Replace it with:
 
 ```ts
 import { getAI, getGenerativeModel, GoogleAIBackend, InferenceMode } from "firebase/ai";
+import { PERSONA_PROMPT } from "./constants";
 ```
 
 **Then**, find the `initModels()` function body and add your initialization code:
@@ -224,16 +234,24 @@ export function initModels(): void {
   // Text model: prefers on-device, falls back to cloud automatically.
   // We use startChat() on this model in useChat.ts so the SDK manages
   // conversation history across messages in the same session.
+  // ⚠️  systemInstruction must be set here in inCloudParams — the SDK
+  //     correctly normalises it at this level (not inside startChat()).
   _textModel = getGenerativeModel(ai, {
     mode: InferenceMode.PREFER_ON_DEVICE,
-    inCloudParams: { model: "gemini-2.5-flash-lite" },
+    inCloudParams: {
+      model: "gemini-2.5-flash-lite",
+      systemInstruction: PERSONA_PROMPT,
+    },
   });
 
   // Image model: always uses cloud (on-device has limited multimodal support).
   // Used as a one-shot generateContent() call in useChat.ts.
   _imageModel = getGenerativeModel(ai, {
     mode: InferenceMode.ONLY_IN_CLOUD,
-    inCloudParams: { model: "gemini-2.5-flash" },
+    inCloudParams: {
+      model: "gemini-2.5-flash",
+      systemInstruction: PERSONA_PROMPT,
+    },
   });
 }
 ```
@@ -245,9 +263,14 @@ export function initModels(): void {
 - `getAI(app, { backend: new GoogleAIBackend() })` — creates an AI service
   instance connected to your Firebase project, using the Gemini Developer API backend
 
-- `getGenerativeModel(ai, { mode: InferenceMode.PREFER_ON_DEVICE })` — creates a
-  model instance that prefers Chrome's built-in Gemini Nano, with `gemini-2.5-flash-lite`
+- `getGenerativeModel(ai, { mode: InferenceMode.PREFER_ON_DEVICE, inCloudParams: {...} })` —
+  creates a model that prefers Chrome's built-in Gemini Nano, with `gemini-2.5-flash-lite`
   as the cloud fallback
+
+- `systemInstruction: PERSONA_PROMPT` — gives the model its persona. Setting it
+  here (in `inCloudParams`) is important: the SDK normalises the string to the
+  correct API format at this level. Passing it to `startChat()` instead causes
+  a 400 error — see the note in Step 3.
 
 - `inCloudParams: { model: "gemini-2.5-flash" }` — the image model uses Gemini 2.5
   Flash for fast, high-quality multimodal responses (full cloud inference)
@@ -301,11 +324,10 @@ Add this code inside the `if (textModel)` block:
 
 ```ts
 if (textModel) {
-  // Create a session on the first message; reuse it for follow-ups
+  // Create a session on the first message; reuse it for follow-ups.
+  // The persona comes from systemInstruction set on the model in firebase.ts.
   if (!chatSessionRef.current) {
-    chatSessionRef.current = textModel.startChat({
-      systemInstruction: PERSONA_PROMPT,
-    });
+    chatSessionRef.current = textModel.startChat();
   }
 
   // The SDK automatically appends this message + response to the history
@@ -320,9 +342,9 @@ if (textModel) {
 
 ### What each part does
 
-- `textModel.startChat({ systemInstruction: PERSONA_PROMPT })` — creates a
-  `ChatSession`. The system instruction gives the AI its persona once, upfront,
-  rather than repeating it in every message.
+- `textModel.startChat()` — creates a `ChatSession` with no extra params. The
+  Tube Veteran's persona is already baked into the model via `systemInstruction`
+  in `firebase.ts` — no need to repeat it here.
 
 - `chatSessionRef.current` — a React ref that holds the session across renders
   without causing re-renders itself. It persists for the full conversation.
@@ -333,6 +355,12 @@ if (textModel) {
 
 - `result.response.inferenceSource` — tells you whether inference happened
   `"on_device"` (⚡) or `"in_cloud"` (☁️). The UI chip updates automatically.
+
+> **Why not pass `systemInstruction` to `startChat()`?**
+> The Firebase AI SDK normalises a plain string to the correct `Content` API
+> format when you pass it to `getGenerativeModel()`. It does *not* do this
+> normalisation inside `startChat()`, so the raw string gets sent to the API
+> and you get a 400 error. Always set `systemInstruction` at the model level.
 
 > **Note on on-device + multi-turn:** When Gemini Nano handles the first
 > message, it works great. For follow-up messages with conversation history,
@@ -399,7 +427,7 @@ Add these three lines inside the `if (imageModel)` block:
 ```ts
 if (imageModel) {
   const imagePart = await fileToGenerativePart(imageFile);
-  const result = await imageModel.generateContent([fullPrompt, imagePart]);
+  const result = await imageModel.generateContent([userMessage, imagePart]);
   responseText = result.response.text();
   source = "in_cloud";
 }
@@ -493,10 +521,9 @@ Got some time left? Try these:
 - [ ] **Add streaming** — replace `generateContent()` with `generateContentStream()`
       for a typewriter effect. Hint: iterate over `result.stream` and update the
       message text incrementally
-- [ ] **Save chat history** — store messages in `localStorage` so they persist
-      across page refreshes. Hint: `useEffect` + `JSON.stringify`
-- [ ] **Add a system instruction** — instead of prepending the persona to every
-      message, use `systemInstruction` in `getGenerativeModel()` for cloud-only requests
+- [ ] **Swap the inference mode** — try `InferenceMode.ONLY_ON_DEVICE` and then
+      `InferenceMode.PREFER_IN_CLOUD` for the text model. How does latency and
+      response quality compare?
 
 ### Hard
 - [ ] **Enable App Check** — adds an extra layer of security to prevent API abuse.

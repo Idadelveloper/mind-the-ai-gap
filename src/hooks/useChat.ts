@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import type { ChatSession } from "firebase/ai";
 import type { ChatMessage, InferenceSource } from "../types";
-import { PERSONA_PROMPT, MOCK_RESPONSE_TEXT, MOCK_IMAGE_RESPONSE_TEXT } from "../constants";
+import { MOCK_RESPONSE_TEXT, MOCK_IMAGE_RESPONSE_TEXT } from "../constants";
 import {
   initModels,
   getTextModel,
@@ -82,9 +82,8 @@ export function useChat() {
         if (imageFile) {
           // ─── Image + text path (standalone cloud call) ──────────────────
           // Images use a one-shot generateContent() call rather than a chat
-          // session — the persona is included directly in the prompt.
+          // session. The persona comes from systemInstruction set at model level.
           const imageModel = getImageModel();
-          const fullPrompt = `${PERSONA_PROMPT}\n\nUser question: ${userMessage}`;
           let responseText = MOCK_IMAGE_RESPONSE_TEXT;
           let source: InferenceSource = "mock";
 
@@ -97,7 +96,7 @@ export function useChat() {
             //      const imagePart = await fileToGenerativePart(imageFile);
             //
             // 2. Send text and image together:
-            //      const result = await imageModel.generateContent([fullPrompt, imagePart]);
+            //      const result = await imageModel.generateContent([userMessage, imagePart]);
             //
             // 3. Extract the response:
             //      responseText = result.response.text();
@@ -123,10 +122,10 @@ export function useChat() {
             //
             // 1. Create a chat session (only on the first message of a conversation):
             //      if (!chatSessionRef.current) {
-            //        chatSessionRef.current = textModel.startChat({
-            //          systemInstruction: PERSONA_PROMPT,
-            //        });
+            //        chatSessionRef.current = textModel.startChat();
             //      }
+            //    ⚠️  Don't pass systemInstruction here — set it at model level in
+            //        firebase.ts instead (the SDK only normalises it there).
             //
             // 2. Send the message — the SDK automatically tracks history:
             //      const result = await chatSessionRef.current.sendMessage(userMessage);
